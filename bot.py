@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils import executor
-from flask import Flask
 
 # --- Настройки ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -24,7 +23,7 @@ pairs = {}
 queue = []
 user_info = {}
 last_activity = {}
-user_states = {}  # Для хранения временных данных (имя, возраст)
+user_states = {}
 
 # --- Проверка бездействия ---
 async def check_inactivity():
@@ -38,7 +37,6 @@ async def check_inactivity():
                     partner = pairs[user_id]
                     try:
                         await bot.send_message(partner, "⏰ Собеседник неактивен более 10 минут. Чат закрыт.")
-                        await bot.send_message(user_id, "⏰ Чат закрыт из-за бездействия.")
                     except:
                         pass
                     if partner in pairs:
@@ -200,27 +198,8 @@ async def forward_message(message: types.Message):
     else:
         await message.answer("Вы не в чате. Напишите /start для поиска собеседника")
 
-# --- Flask для Render ---
-flask_app = Flask(__name__)
-
-@flask_app.route('/')
-def health_check():
-    return "Анонимный чат-бот работает!", 200
-
-@flask_app.route('/health')
-def health():
-    return "OK", 200
-
-def run_flask():
-    port = int(os.environ.get("PORT", 5000))
-    flask_app.run(host="0.0.0.0", port=port)
-
 # --- Запуск ---
 if __name__ == "__main__":
-    import threading
-    web_thread = threading.Thread(target=run_flask)
-    web_thread.start()
-    
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.create_task(check_inactivity())
